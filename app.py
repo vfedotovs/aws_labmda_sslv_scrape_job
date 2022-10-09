@@ -1,10 +1,10 @@
 import json
 import re
+from datetime import datetime
+import time
 import boto3
 import requests
-from datetime import datetime
 from bs4 import BeautifulSoup
-import time
 
 
 def find_single_page_urls(bs_object) -> list:
@@ -12,8 +12,8 @@ def find_single_page_urls(bs_object) -> list:
     object: bs4 object
     returns: list of strings with all message URLs"""
     urls = []
-    for a in bs_object.find_all('a', href=True):
-        one_link = "https://ss.lv" + a['href']
+    for hyperlink in bs_object.find_all('a', href=True):
+        one_link = "https://ss.lv" + hyperlink['href']
         re_match = re.search("msg", one_link)
         if re_match:
             urls.append(one_link)
@@ -25,10 +25,8 @@ def find_single_page_urls(bs_object) -> list:
 
 
 def extract_data_from_url(nondup_urls: list) -> dict:
-    """TODO: split this function it does too many tasks:
-    1. Iterate over url list
-    2. extract ad_otion names,values, price and listed date value for each url
-    3. format in to dict and return dict """
+    """Iterates over url list and extracts ad_otion names,values,
+    price and listed date value for each url and formats data and returns as dict"""
     msg_url_count = len(nondup_urls)
     all_ad_data = {}
     curr_ad_attributes = []
@@ -102,6 +100,7 @@ def extract_url_hash(full_url: str) -> str:
 
 
 def handler(event, context):
+    """lambda main entry point"""
     s3 = boto3.resource('s3')
     page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
     bs_ogre_object = BeautifulSoup(page.content, "html.parser")
@@ -113,7 +112,7 @@ def handler(event, context):
     full_time = str(datetime.now())
     time_str = full_time.split(" ")[0]
 
-    BUCKET_NAME = "dailycovid19lambda"
+    bucket_name = "my-s3-bucket-name"
     output_file_name = f"ogre_city_raw_data_{time_str}.json"
-    OUTPUT_BODY = json.dumps(ads_data_json)
-    s3.Bucket(BUCKET_NAME).put_object(Key=output_file_name, Body=OUTPUT_BODY)
+    json_body = json.dumps(ads_data_json)
+    s3.Bucket(bucket_name).put_object(Key=output_file_name, Body=json_body)
