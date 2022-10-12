@@ -2,7 +2,7 @@ import json
 import re
 from datetime import datetime
 import time
-import boto3
+# import boto3
 import requests
 from bs4 import BeautifulSoup
 
@@ -27,12 +27,12 @@ def find_single_page_urls(bs_object) -> list:
 def extract_data_from_url(nondup_urls: list) -> dict:
     """Iterates over url list and extracts ad_otion names,values,
     price and listed date value for each url and formats data and returns as dict"""
-    msg_url_count = len(nondup_urls)
     all_ad_data = {}
     curr_ad_attributes = []
     ad_dict = []
-    print(len(nondup_urls))
-    for i in range(msg_url_count):
+    print(f"Extracted {len(nondup_urls)} URL links with apartment ads for sale in ogre city")
+#    for i in range(msg_url_count): # original iterates over all ad URLs
+    for i in range(3):
         current_msg_url = nondup_urls[i] + "\n"
         table_opt_names = get_msg_table_info(nondup_urls[i], "ads_opt_name")
         table_opt_values = get_msg_table_info(nondup_urls[i], "ads_opt")
@@ -99,20 +99,50 @@ def extract_url_hash(full_url: str) -> str:
     return url_hash
 
 
-def handler(event, context):
-    """lambda main entry point"""
-    s3 = boto3.resource('s3')
+def main():
+    """main entry point for debugging"""
+#    s3 = boto3.resource('s3')
+
     page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
     bs_ogre_object = BeautifulSoup(page.content, "html.parser")
     valid_msg_urls = find_single_page_urls(bs_ogre_object)
-
+#
     advert_data = extract_data_from_url(valid_msg_urls)
     ads_data_json = json.dumps(advert_data, indent = 4)
-
+#
     full_time = str(datetime.now())
-    time_str = full_time.split(" ")[0]
+    date_str = full_time.split(" ")[0]
+    time_str = full_time.split(" ")[1].split(".")[0]
+    new_ts = time_str.replace(":", "-" )
+    uniq_ts = date_str + "T" + new_ts
 
-    bucket_name = "my-s3-bucket-name"
-    output_file_name = f"ogre_city_raw_data_{time_str}.json"
-    json_body = json.dumps(ads_data_json)
-    s3.Bucket(bucket_name).put_object(Key=output_file_name, Body=json_body)
+#    bucket_name = "my-s3-bucket-name"
+    output_file_name = f"ogre_city_raw_data_{uniq_ts}.json"
+    json_object = json.dumps(ads_data_json)
+    
+    # Writing to sample.json
+    with open(output_file_name, "w") as outfile:
+        outfile.write(json_object)
+
+#    s3.Bucket(bucket_name).put_object(Key=output_file_name, Body=json_body)
+
+main()
+
+
+#def handler(event, context):
+#    """lambda main entry point"""
+#    s3 = boto3.resource('s3')
+#    page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
+#    bs_ogre_object = BeautifulSoup(page.content, "html.parser")
+#    valid_msg_urls = find_single_page_urls(bs_ogre_object)
+#
+#    advert_data = extract_data_from_url(valid_msg_urls)
+#    ads_data_json = json.dumps(advert_data, indent = 4)
+#
+#    full_time = str(datetime.now())
+#    time_str = full_time.split(" ")[0]
+
+#    bucket_name = "my-s3-bucket-name"
+#    output_file_name = f"ogre_city_raw_data_{time_str}.json"
+#    json_body = json.dumps(ads_data_json)
+#    s3.Bucket(bucket_name).put_object(Key=output_file_name, Body=json_body)
