@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+import re
 import json
 
-FILE = 'ogre_city_raw_data_2023-01-20.json'
+FILE = 'ogre_city_raw_data_2023-01-21.json'
 
 #bash to get more meaning format
 # cat ogre_city_raw_data_2023-01-20.json \
@@ -22,8 +23,18 @@ FILE = 'ogre_city_raw_data_2023-01-20.json'
 
 # Opening JSON file
 with open(FILE) as json_file:
-    data = json.load(json_file)
-    print("Type:", type(data))
+    raw_data = json.load(json_file)
+    print("Type of raw_data:", type(raw_data))
+
+
+def clean_string(str_data: str) -> str:
+    """ Removes only 2 space chars in row occournaces"""
+    removed_two_spaces = re.sub(' +', ' ', str_data)
+    removed_nl_char = re.sub('\n', '', removed_two_spaces)
+    print(removed_nl_char)
+    return removed_nl_char
+
+clean_string(raw_data)
 
 
 employees_string = '''
@@ -44,11 +55,37 @@ employees_string = '''
 }
 '''
 
-valid_data = json.loads(employees_string)
+valid_json_data = json.loads(employees_string)
 
-print(type(valid_data))
+print("Type of employees_string:",type(valid_json_data))
+print(valid_json_data)
 #output
 #<class 'dict'>
+
+
+
+
+    # Create pandas data frame
+    # mydict = {'URL': urls,
+    #         'Room_count': room_counts,
+    #         'Size_sq_m' : room_sizes,
+    #         'Floor': room_floors,
+    #         "Street": room_streets,
+    #         'Price': room_prices,
+    #         'Pub_date': publish_dates }
+    # pandas_df = pd.DataFrame(mydict)
+    # return pandas_df
+
+
+# def create_file_copy() -> None:
+    # """Creates copy of pandas_df.csv in as data/pandas_df.csv_2022-12-03.csv"""
+    # todays_date = datetime.today().strftime('%Y-%m-%d')
+    # dest_file = 'pandas_df_' + todays_date + '.csv'
+    # copy_cmd = 'cp pandas_df.csv data/' + dest_file
+    # if not os.path.exists('data'):
+    #     os.makedirs('data')
+    # os.system(copy_cmd)
+
 
 
 # how to convert str to json
