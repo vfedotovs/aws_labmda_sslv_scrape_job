@@ -1,6 +1,5 @@
 import json
 import re
-from datetime import datetime
 import time
 import boto3
 import requests
@@ -32,7 +31,8 @@ def extract_data_from_url(nondup_urls: list) -> dict:
     curr_ad_attributes = []
     ad_dict = []
     print(len(nondup_urls))
-    for i in range(msg_url_count):
+    # for i in range(msg_url_count): # Original code line
+    for i in range(3):  # DEBUG code line
         current_msg_url = nondup_urls[i] + "\n"
         table_opt_names = get_msg_table_info(nondup_urls[i], "ads_opt_name")
         table_opt_values = get_msg_table_info(nondup_urls[i], "ads_opt")
@@ -99,20 +99,57 @@ def extract_url_hash(full_url: str) -> str:
     return url_hash
 
 
-def handler(event, context):
+def upload_text_file_to_s3(file_path, bucket_name, s3_key) -> None:
+    """
+    Uploads a text file to an S3 bucket.
+
+    :param file_path: The local path to the text file.
+    :param bucket_name: The name of the S3 bucket to upload the file to.
+    :param s3_key: The S3 key to use for the uploaded file.
+    """
+    s3_client = boto3.client('s3')
+    with open(file_path, 'rb') as file:
+        s3_client.upload_fileobj(file, bucket_name, s3_key)
+
+
+def add_datetime_to_filename(filename):
+    """
+    Adds the current date and time to a filename.
+
+    :param filename: The original filename.
+    :return: The new filename with the current date and time added.
+    """
+
+    # Get the current date and time in YYYY-MM-DDTHH-MM-SS format
+    current_datetime = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
+
+    # Add the current date and time to the filename
+    new_filename = filename.replace('.txt', f'-{current_datetime}.txt')
+
+    return new_filename
+
+
+def debug():
+    # def handler(event, context):  # Original code line
     """lambda main entry point"""
-    s3 = boto3.resource('s3')
     page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
     bs_ogre_object = BeautifulSoup(page.content, "html.parser")
     valid_msg_urls = find_single_page_urls(bs_ogre_object)
-
-    advert_data = extract_data_from_url(valid_msg_urls)
-    ads_data_json = json.dumps(advert_data, indent = 4)
-
-    full_time = str(datetime.now())
-    time_str = full_time.split(" ")[0]
+    scraped_data_from_all_urls = extract_data_from_url(valid_msg_urls)
+    print(scraped_data_from_all_urls)
 
     bucket_name = "my-s3-bucket-name"
-    output_file_name = f"ogre_city_raw_data_{time_str}.json"
-    json_body = json.dumps(ads_data_json)
-    s3.Bucket(bucket_name).put_object(Key=output_file_name, Body=json_body)
+
+
+debug()
+
+# working code that uploads text file to S3
+# original_filename = "Ogre-raw-data-report.txt"
+# new_filename = add_datetime_to_filename(original_filename)
+# S3_bucket="lambda-ogre-scraped-data"
+# upload_text_file_to_s3(original_filename, S3_bucket, new_filename )
+
+# # Output: Ogre-raw-data-report-2023-02-18.txt (if today is February 18, 2023)
+# print(f"File {new_filename} was uploaded to S3 bucket sucessfilly" )
+
+
