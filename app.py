@@ -1,4 +1,4 @@
-import json
+import datetime
 import re
 import time
 import boto3
@@ -23,29 +23,29 @@ def find_single_page_urls(bs_object) -> list:
     return valid_urls
 
 
-def extract_data_from_url(nondup_urls: list) -> dict:
-    """Iterates over url list and extracts ad_otion names,values,
-    price and listed date value for each url and formats data and returns as dict"""
+def extract_data_from_url(nondup_urls: list) -> None:
+    """Iterate over all first page msg urls 
+    scrape advert data from each url and write 
+    to file Ogre-raw-data-report.txt"""
+
+    dest_file="Ogre-raw-data-report.txt"
     msg_url_count = len(nondup_urls)
-    all_ad_data = {}
-    curr_ad_attributes = []
-    ad_dict = []
-    print(len(nondup_urls))
-    # for i in range(msg_url_count): # Original code line
-    for i in range(3):  # DEBUG code line
+    for i in range(msg_url_count): # Original line
         current_msg_url = nondup_urls[i] + "\n"
         table_opt_names = get_msg_table_info(nondup_urls[i], "ads_opt_name")
         table_opt_values = get_msg_table_info(nondup_urls[i], "ads_opt")
         table_price = get_msg_table_info(nondup_urls[i], "ads_price")
+
         print(f"Extracting data from message URL  {i + 1}")
-        ad_url_hash = extract_url_hash(current_msg_url)
-        ad_dict.append(ad_url_hash)
+        write_line(current_msg_url, dest_file)
         for idx in range(len(table_opt_names) - 1):
-            opt_name_value_line = table_opt_names[idx] + table_opt_values[idx]
-            curr_ad_attributes.append(opt_name_value_line)
+            text_line = table_opt_names[idx] + ">" + table_opt_values[idx] + "\n"
+            write_line(text_line, dest_file)
+
         # Extract message price field
-        price_line = "apt_price:" + table_price[0]
-        ad_dict.append(price_line)
+        price_line = "Price:>" + table_price[0] + "\n"
+        write_line(price_line, dest_file)
+
         # Extract message publish date field
         table_date = get_msg_table_info(nondup_urls[i], "msg_footer")
         for date_idx in range(len(table_date)):
@@ -53,14 +53,15 @@ def extract_data_from_url(nondup_urls: list) -> dict:
                 date_str = table_date[date_idx]
                 date_and_time = date_str.replace("Datums:", "")
                 date_clean = date_and_time.split()[0]
-                date_field = "listed_date:" + str(date_clean)
-        ad_dict.append(date_field)
-        time.sleep(3)
-        curr_ad_attributes.append(price_line)
-        curr_ad_attributes.append(date_field)
-        all_ad_data[ad_url_hash] = curr_ad_attributes
-        curr_ad_attributes = []
-    return all_ad_data
+                date_field = "Date:>" + str(date_clean) + "\n"
+        write_line(date_field, dest_file)
+        time.sleep(2)
+
+
+def write_line(text: str, file_name: str) -> None:
+    """Append text to end of the file"""
+    with open(file_name, 'a') as the_file:
+        the_file.write(text)
 
 
 def get_msg_table_info(msg_url: str, td_class: str) -> list:
@@ -129,27 +130,20 @@ def add_datetime_to_filename(filename):
     return new_filename
 
 
-def debug():
-    # def handler(event, context):  # Original code line
+def handler(event, context):  # Original code line
     """lambda main entry point"""
     page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
     bs_ogre_object = BeautifulSoup(page.content, "html.parser")
     valid_msg_urls = find_single_page_urls(bs_ogre_object)
-    scraped_data_from_all_urls = extract_data_from_url(valid_msg_urls)
-    print(scraped_data_from_all_urls)
+    extract_data_from_url(valid_msg_urls)
 
-    bucket_name = "my-s3-bucket-name"
+    original_filename = "Ogre-raw-data-report.txt"
+    new_filename = add_datetime_to_filename(original_filename)
+    S3_bucket="lambda-ogre-scraped-data"
+    upload_text_file_to_s3(original_filename, S3_bucket, new_filename )
+    # Output: Ogre-raw-data-report-2023-02-18.txt (if today is February 18, 2023)
+    print(f"File {new_filename} was uploaded to S3 bucket sucessfilly" )
 
 
-debug()
-
-# working code that uploads text file to S3
-# original_filename = "Ogre-raw-data-report.txt"
-# new_filename = add_datetime_to_filename(original_filename)
-# S3_bucket="lambda-ogre-scraped-data"
-# upload_text_file_to_s3(original_filename, S3_bucket, new_filename )
-
-# # Output: Ogre-raw-data-report-2023-02-18.txt (if today is February 18, 2023)
-# print(f"File {new_filename} was uploaded to S3 bucket sucessfilly" )
 
 
