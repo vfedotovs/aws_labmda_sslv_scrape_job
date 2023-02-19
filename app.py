@@ -3,6 +3,7 @@ import re
 import time
 import boto3
 import requests
+import os
 from bs4 import BeautifulSoup
 
 
@@ -58,10 +59,10 @@ def extract_data_from_url(nondup_urls: list) -> None:
         time.sleep(2)
 
 
-def write_line(text: str, file_name: str) -> None:
-    """Append text to end of the file"""
-    with open(file_name, 'a') as the_file:
-        the_file.write(text)
+# def write_line(text: str, file_name: str) -> None:
+#     """Append text to end of the file"""
+#     with open(file_name, 'a') as the_file:
+#         the_file.write(text)
 
 
 def get_msg_table_info(msg_url: str, td_class: str) -> list:
@@ -135,6 +136,9 @@ def handler(event, context):  # Original code line
     page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
     bs_ogre_object = BeautifulSoup(page.content, "html.parser")
     valid_msg_urls = find_single_page_urls(bs_ogre_object)
+    
+    #Change directory to /tmp folder
+    os.chdir('/tmp')    # lambda allows to write only in /tmp
     extract_data_from_url(valid_msg_urls)
 
     original_filename = "Ogre-raw-data-report.txt"
@@ -142,7 +146,11 @@ def handler(event, context):  # Original code line
     S3_bucket="lambda-ogre-scraped-data"
     upload_text_file_to_s3(original_filename, S3_bucket, new_filename )
     # Output: Ogre-raw-data-report-2023-02-18.txt (if today is February 18, 2023)
-    print(f"File {new_filename} was uploaded to S3 bucket sucessfilly" )
+    print(f"File {new_filename} was uploaded to S3 bucket successfully" )
+
+    return {'status': 'True',
+            'statusCode': 200,
+            'body': 'File with scraped data was uploaded to S3 bucket successfully'}
 
 
 
