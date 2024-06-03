@@ -16,20 +16,22 @@ Project is created with:
 
 ## Test your function locally using the docker build and docker run commands.
 
-To build you image:
-
+```sh
+# Build you doker image:
 docker build -t <image name> .
 
-
-To run your image locally:
-
+# Run your image locally:
 docker run -p 9000:8080 <image name>
 
 
-In a separate terminal, you can then locally invoke the function using cURL:
-
+# In a separate terminal, you can then locally invoke the function using cURL:
 curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"payload":"hello world!"}'
+```
 
-Deploying the function to ECR, check out the AWS documentation: 
-Creating a ECR repository https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html
-Pushing image to ECR: https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html
+Deploying the function to ECR, check out the AWS documentation:
+
+Creating a ECR repository:
+https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html
+
+Pushing image to ECR:
+https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html
