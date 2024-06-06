@@ -26,16 +26,37 @@ def find_single_page_urls(bs_object) -> list:
     return valid_urls
 
 
-def
+def extract_ad_value() -> str:
+    # def extract_street(URL: str) -> str:
+    """TODO extract street information value from ads_opt from opt_name 'Iela:'
+    returns string
+
+    7 values  +  insert time + price + sqm_price + view count 
+    ['Iela:', 'Istabas:', 'Platība:', 'Stāvs:', 'Sērija:', 'Mājas tips:', 'Ērtības:']
+    ['<b>Ausekļa prospekts 2a', '2', '51 m²', '2/9', '602.', 'Paneļu', 'Lodžija, Parkošanas vieta']
+
+    """
+    URL = "https://ss.lv/msg/lv/real-estate/flats/ogre-and-reg/ogre/idlmb.html"
+    STREET_KEY = 'Iela:'
+    table_opt_names = v2_get_msg_table_info(URL, "ads_opt_name")
+    table_opt_values = v2_get_msg_table_info(URL, "ads_opt")
+    names_values = dict(zip(table_opt_names, table_opt_values))
+    print(" ------ ")
+    value = names_values.get(STREET_KEY, 'Key not found')
+    clean_value = value.replace("[Karte]", "")
+    print(f"The value for key '{STREET_KEY}' is {clean_value}")
+
 
 
 """
+Extracted 30 URL links with apartment ads for sale in ogre city
+https://ss.lv/msg/lv/real-estate/flats/ogre-and-reg/ogre/idlmb.html
 
-def extract_street(URL: str) -> {hash:string street name}
-	"Extracts only street name"
-	'Iela:', street
-	# code goes here
-	return str if no data return NA
+['Pilsēta, rajons:', 'Pilsēta/pagasts:', 'Iela:', 'Istabas:', 'Platība:', 'Stāvs:', 'Sērija:', 'Mājas tips:', 'Ērtības:']
+['<b>Ogre un raj.', '<b>Ogre', '<b>Ausekļa prospekts 2a', '2', '51 m²', '2/9', '602.', 'Paneļu', 'Lodžija, Parkošanas vieta']
+apt_price:47 000 € (921.57 €/m²)
+
+
 
 
 def extract_floor_area(URL) -> hash:int
@@ -125,9 +146,9 @@ def extract_data_from_url(nondup_urls: list) -> dict:
         print(current_msg_url)
         table_opt_names = get_msg_table_info(nondup_urls[i], "ads_opt_name")
 
-        print(table_opt_names)
+        # print(table_opt_names)
         table_opt_values = get_msg_table_info(nondup_urls[i], "ads_opt")
-        print(table_opt_values)
+        # print(table_opt_values)
         table_price = get_msg_table_info(nondup_urls[i], "ads_price")
         print(f"Extracting data from message URL  {i + 1}")
         ad_url_hash = extract_url_hash(current_msg_url)
@@ -156,6 +177,36 @@ def extract_data_from_url(nondup_urls: list) -> dict:
     return all_ad_data
 
 
+def v2_get_msg_table_info(msg_url: str, td_class: str) -> list:
+    """Function parses message page and extracts td_class table fields.
+    Parameters:
+    msg_url: message web page link
+    td_class: table field name
+    Returns:
+    List of strings with table field data
+    """
+    try:
+        page = requests.get(msg_url)
+        page.raise_for_status()  # Check if the request was successful
+    except requests.RequestException as e:
+        print(f"Request failed: {e}")
+        return []
+
+    soup = BeautifulSoup(page.content, "html.parser")
+    table = soup.find('table', id="page_main")
+    if not table:
+        print("Table with id 'page_main' not found.")
+        return []
+
+    table_fields = []
+    table_data = table.find_all('td', class_=td_class)
+    for data in table_data:
+        # Get the text content and strip whitespace
+        name = data.get_text(strip=True)
+        table_fields.append(name)
+    return table_fields
+
+
 def get_msg_table_info(msg_url: str, td_class: str) -> list:
     """ Function parses message page and extracts td_class table fields
     Paramters:
@@ -169,8 +220,11 @@ def get_msg_table_info(msg_url: str, td_class: str) -> list:
     table_data = table.findAll('td', {"class": td_class})
     for data in table_data:
         tostr = str(data)
+        # print("print - data here ")
         no_front = tostr.split('">', 1)[1]
+        # print(no_front)
         name = no_front.split("</", 1)[0]
+        # print(name)
         table_fields.append(name)
     return table_fields
 
@@ -195,9 +249,11 @@ def extract_url_hash(full_url: str) -> str:
 def main():
     """main entry point for debugging"""
 #    s3 = boto3.resource('s3')
-    page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
+    page = requests.get(
+        "https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
     bs_ogre_object = BeautifulSoup(page.content, "html.parser")
     valid_msg_urls = find_single_page_urls(bs_ogre_object)
+    extract_ad_value()
 #
     advert_data = extract_data_from_url(valid_msg_urls)
     ads_data_json = json.dumps(advert_data, indent=4)
