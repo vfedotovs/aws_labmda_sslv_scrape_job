@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import re
 from datetime import datetime
@@ -24,9 +26,92 @@ def find_single_page_urls(bs_object) -> list:
     return valid_urls
 
 
+"""
+
+def extract_street(URL: str) -> {hash:string street name}
+	"Extracts only street name"
+	'Iela:', street
+	# code goes here
+	return str if no data return NA
+
+
+def extract_floor_area(URL) -> hash:int
+    #'Platība:', floor_area
+	ruturn dict
+
+def extract_room_count(URL) -> hash:int
+    # 'Istabas:',room_count
+	return dict
+
+
+def extract_apt_loc_floor(URL) -> hash:int
+     #'Stāvs:',  >> 2 > apt_loc_floor,
+
+
+def extract_house_floor_count(URL) -> hash:int
+    #  'Stāvs:' house_floor_count
+    return dict
+
+def extract_house_series(URL) -> hash:str
+    #  'Sērija:', house_series
+    return dict
+
+
+def extract_house_type(URL) -> hash:str
+    #  'Mājas tips:', house_type
+    return dict
+
+ 
+def extract_apt_feat(URL) -> hash:list 
+    # 'Ērtības:'] apt_feat
+    return dict
+
+def extart_apt_price(URL) -> hash:int 
+    # price valuse code
+    return dict
+ 
+
+def extart_sqm_price(URL) -> hash:float
+    # sqm price code
+    return dict
+
+
+def extract_pub_date(ULR) ->hash: str
+   # Datums  pub_date
+
+
+def extarct_view_count(URL) ->hash:int
+    # Unicalo ameklejumu skaits: view_count
+
+
+def combine_single_ad_data(URL) dict:
+    # call function from above
+    extrat_1
+    extact_2
+    exctract_... 
+    return dict  URL:hash + data
+
+list of dict
+
+for URL in URLS:
+	combine_single_ad_data(URL) 
+	add to list of dict 
+
+
+def create_json_file()
+	using list of all adds data 
+
+"""
+
+
 def extract_data_from_url(nondup_urls: list) -> dict:
-    """Iterates over url list and extracts ad_otion names,values,
-    price and listed date value for each url and formats data and returns as dict"""
+    """
+    TODO: Refactor this function
+
+
+    Iterates over url list and extracts ad_otion names,values,
+    price and listed date value for each url and formats data
+    and returns as dict"""
     all_ad_data = {}
     curr_ad_attributes = []
     ad_dict = []
@@ -34,8 +119,12 @@ def extract_data_from_url(nondup_urls: list) -> dict:
 #    for i in range(msg_url_count): # original iterates over all ad URLs
     for i in range(3):
         current_msg_url = nondup_urls[i] + "\n"
+        print(current_msg_url)
         table_opt_names = get_msg_table_info(nondup_urls[i], "ads_opt_name")
+
+        print(table_opt_names)
         table_opt_values = get_msg_table_info(nondup_urls[i], "ads_opt")
+        print(table_opt_values)
         table_price = get_msg_table_info(nondup_urls[i], "ads_price")
         print(f"Extracting data from message URL  {i + 1}")
         ad_url_hash = extract_url_hash(current_msg_url)
@@ -46,6 +135,7 @@ def extract_data_from_url(nondup_urls: list) -> dict:
         # Extract message price field
         price_line = "apt_price:" + table_price[0]
         ad_dict.append(price_line)
+        print(price_line)
         # Extract message publish date field
         table_date = get_msg_table_info(nondup_urls[i], "msg_footer")
         for date_idx in range(len(table_date)):
@@ -55,9 +145,11 @@ def extract_data_from_url(nondup_urls: list) -> dict:
                 date_clean = date_and_time.split()[0]
                 date_field = "listed_date:" + str(date_clean)
         ad_dict.append(date_field)
-        time.sleep(3)
+        time.sleep(2)
         curr_ad_attributes.append(price_line)
+        print(price_line)
         curr_ad_attributes.append(date_field)
+        print(date_field)
         all_ad_data[ad_url_hash] = curr_ad_attributes
         curr_ad_attributes = []
     return all_ad_data
@@ -102,34 +194,32 @@ def extract_url_hash(full_url: str) -> str:
 def main():
     """main entry point for debugging"""
 #    s3 = boto3.resource('s3')
-
     page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
     bs_ogre_object = BeautifulSoup(page.content, "html.parser")
     valid_msg_urls = find_single_page_urls(bs_ogre_object)
 #
     advert_data = extract_data_from_url(valid_msg_urls)
-    ads_data_json = json.dumps(advert_data, indent = 4)
+    ads_data_json = json.dumps(advert_data, indent=4)
 #
     full_time = str(datetime.now())
     date_str = full_time.split(" ")[0]
     time_str = full_time.split(" ")[1].split(".")[0]
-    new_ts = time_str.replace(":", "-" )
+    new_ts = time_str.replace(":", "-")
     uniq_ts = date_str + "T" + new_ts
 
 #    bucket_name = "my-s3-bucket-name"
     output_file_name = f"ogre_city_raw_data_{uniq_ts}.json"
     json_object = json.dumps(ads_data_json)
-    
     # Writing to sample.json
     with open(output_file_name, "w") as outfile:
         outfile.write(json_object)
-
 #    s3.Bucket(bucket_name).put_object(Key=output_file_name, Body=json_body)
+
 
 main()
 
 
-#def handler(event, context):
+# def handler(event, context):
 #    """lambda main entry point"""
 #    s3 = boto3.resource('s3')
 #    page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
