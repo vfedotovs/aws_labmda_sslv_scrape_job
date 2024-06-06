@@ -47,6 +47,23 @@ def extract_ad_value() -> str:
     print(f"The value for key '{STREET_KEY}' is {clean_value}")
 
 
+def extract_table_names_values(URL: str) -> dict:
+    """Function extracts from 2 tables keys and values
+    Example of returned data structure is dict from 2 lists
+     
+    If the lists have different lengths, zip will stop creating pairs when the shortest list is exhausted.
+    If you need to handle lists of different lengths and ensure that all keys have corresponding values,
+    you can use itertools.zip_longest.
+
+    ['Iela:', 'Istabas:', 'Platība:', 'Stāvs:', 'Sērija:', 'Mājas tips:', 'Ērtības:']
+    ['<b>Ausekļa prospekts 2a', '2', '51 m²', '2/9', '602.', 'Paneļu', 'Lodžija, Parkošanas vieta']
+    """
+    table_opt_names = v2_get_msg_table_info(URL, "ads_opt_name")
+    table_opt_values = v2_get_msg_table_info(URL, "ads_opt")
+    names_values = dict(zip(table_opt_names, table_opt_values))
+    return names_values
+
+
 
 """
 Extracted 30 URL links with apartment ads for sale in ogre city
