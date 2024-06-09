@@ -139,10 +139,7 @@ def extract_data_from_url(nondup_urls: list) -> dict:
         current_msg_url = nondup_urls[i] + "\n"
         print(current_msg_url)
         table_opt_names = get_msg_table_info(nondup_urls[i], "ads_opt_name")
-
-        print(table_opt_names)
         table_opt_values = get_msg_table_info(nondup_urls[i], "ads_opt")
-        print(table_opt_values)
         table_price = get_msg_table_info(nondup_urls[i], "ads_price")
         print(f"Extracting data from message URL  {i + 1}")
         ad_url_hash = extract_url_hash(current_msg_url)
@@ -278,6 +275,18 @@ def extract_ad_value(ad_table: dict, option: str) -> str:
         house_floor_cnt_value = value.split("/")[1]
         print(f"The value for key '{option}' is {house_floor_cnt_value}")
         return option, house_floor_cnt_value
+    if option == "house_series":
+        house_series_value = value
+        print(f"The value for key '{option}' is {house_series_value}")
+        return option, house_series_value
+    if option == "house_type":
+        house_type_value = value
+        print(f"The value for key '{option}' is {house_type_value}")
+        return option, house_type_value
+    if option == "apt_feats":
+        apt_feat_list = value
+        print(f"The value for key '{option}' is {apt_feat_list}")
+        return option, apt_feat_list
 
     print(f"The value for key '{option}' is {value}")
     # return value
@@ -296,6 +305,10 @@ def extract_all_ad_values(URL: str) -> dict:
     fa_key, floor_area_value = extract_ad_value(curr_table, "floor_area")
     apt_loc_key, apt_fl_loc_value = extract_ad_value(curr_table, "apt_floor_loc")
     house_floor_cnt_key, house_floor_cnt_value = extract_ad_value(curr_table, "house_floor_cnt")
+
+    house_series_key, house_series_value = extract_ad_value(curr_table, "house_series")
+    house_type_key, house_type_value = extract_ad_value(curr_table, "house_type")
+    apt_feat_list_key, apt_feat_list_value = extract_ad_value(curr_table, "apt_feats")
     # print(curr_table)
 
 
