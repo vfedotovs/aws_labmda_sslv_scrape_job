@@ -273,6 +273,17 @@ def main():
             print("Apartment price: ", apt_price)
             print("Apartment sqm price: ", clean_sqm_price)
 
+            footer_table = get_msg_table_info(valid_msg_urls[idx], "msg_footer")
+            for date_idx in range(len(footer_table)):
+                if date_idx == 2:
+                    date_str = footer_table[date_idx]
+                    date_and_time = date_str.replace("Datums:", "")
+                    clean_date = date_and_time.split()[0]
+                    clean_time = date_and_time.split()[1]
+                    print("Ad listed date: ", clean_date)
+                    print("Ad listed time: ", clean_time)
+
+
 #
     # refactor this function:
     advert_data = extract_data_from_url(valid_msg_urls)
