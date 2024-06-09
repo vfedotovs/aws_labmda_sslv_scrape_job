@@ -44,89 +44,9 @@ def find_single_page_urls(bs_object) -> list:
     return valid_urls
 
 
-"""
-
-def extract_street(URL: str) -> {hash:string street name}
-	"Extracts only street name"
-	'Iela:', street
-	# code goes here
-	return str if no data return NA
-
-
-def extract_floor_area(URL) -> hash:int
-    #'Platība:', floor_area
-	ruturn dict
-
-def extract_room_count(URL) -> hash:int
-    # 'Istabas:',room_count
-	return dict
-
-
-def extract_apt_loc_floor(URL) -> hash:int
-     #'Stāvs:',  >> 2 > apt_loc_floor,
-
-
-def extract_house_floor_count(URL) -> hash:int
-    #  'Stāvs:' house_floor_count
-    return dict
-
-def extract_house_series(URL) -> hash:str
-    #  'Sērija:', house_series
-    return dict
-
-
-def extract_house_type(URL) -> hash:str
-    #  'Mājas tips:', house_type
-    return dict
-
- 
-def extract_apt_feat(URL) -> hash:list 
-    # 'Ērtības:'] apt_feat
-    return dict
-
-def extart_apt_price(URL) -> hash:int 
-    # price valuse code
-    return dict
- 
-
-def extart_sqm_price(URL) -> hash:float
-    # sqm price code
-    return dict
-
-
-def extract_pub_date(ULR) ->hash: str
-   # Datums  pub_date
-
-
-def extarct_view_count(URL) ->hash:int
-    # Unicalo ameklejumu skaits: view_count
-
-
-def combine_single_ad_data(URL) dict:
-    # call function from above
-    extrat_1
-    extact_2
-    exctract_... 
-    return dict  URL:hash + data
-
-list of dict
-
-for URL in URLS:
-	combine_single_ad_data(URL) 
-	add to list of dict 
-
-
-def create_json_file()
-	using list of all adds data 
-
-"""
-
-
 def extract_data_from_url(nondup_urls: list) -> dict:
     """
     TODO: Refactor this function
-
-
     Iterates over url list and extracts ad_otion names,values,
     price and listed date value for each url and formats data
     and returns as dict"""
@@ -316,23 +236,6 @@ def extract_ad_table_values(URL: str) -> dict:
         ad_opt_table, "apt_feats")
 
 
-def extract_price_table_values(URL: str, td_class_name: str) -> dict:
-    """ TODO
-    # To extract price and sqm price ads price table must be used )
-    # table_price = get_msg_table_info(nondup_urls[i], "ads_price")
-        "price ": "price",
-    "sqm_price": "sqm_price",
-
-    """
-    price_table = extract_table_names_values(
-        URL, td_class_name)    # returns dict
-    price_key, price_value = extract_ad_value(price_table, "price")
-    sqm_price_key, sqm_price_value = extract_ad_value(price_table, "sqm_price")
-    print("Ad TOTAL Price: ", price_value)
-    print("Ad SQM Price: ", sqm_price_value)
-    # pass
-
-
 def extract_footer_table_values(URL: str, td_class_name: str) -> dict:
     """ TODO
     # to extract date and time ads price table must be used )
@@ -349,13 +252,6 @@ def extract_footer_table_values(URL: str, td_class_name: str) -> dict:
     pass
 
 
-
-
-
-   
-
-
-
 def main():
     """main entry point for debugging"""
 #    s3 = boto3.resource('s3')
@@ -367,8 +263,15 @@ def main():
         # Production line
         # for valid_msg_url in valid_msg_urls:
         # debug line only 3 ads
-        for idx in range(4):
+        for idx in range(2):
             extract_ad_table_values(valid_msg_urls[idx])
+            price_and_sqm_price = get_msg_table_info(
+                valid_msg_urls[idx], "ads_price")[0]
+            apt_price = price_and_sqm_price.split('€')[0]
+            sqm_price = price_and_sqm_price.split('€')[1]
+            clean_sqm_price = sqm_price.split("(")[1]
+            print("Apartment price: ", apt_price)
+            print("Apartment sqm price: ", clean_sqm_price)
 
 #
     # refactor this function:
