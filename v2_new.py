@@ -206,7 +206,7 @@ def extract_url_hash(full_url: str) -> str:
     return url_hash
 
 
-def extract_table_names_values(URL: str) -> dict:
+def extract_table_names_values(URL: str, td_class_name: str) -> dict:
     """Function extracts from 2 tables keys and values
     Example of returned data structure is dict from 2 lists
     If the lists have different lengths, zip will stop creating
@@ -217,8 +217,10 @@ def extract_table_names_values(URL: str) -> dict:
 
     ['Iela:', 'Istabas:', 'Platība:', 'Stāvs:', 'Sērija:', 'Mājas tips:', 'Ērtības:']
     ['<b>Ausekļa prospekts 2a', '2', '51 m²', '2/9', '602.', 'Paneļu', 'Lodžija, Parkošanas vieta']
+
+    td_class_name = "ads_opt_name"
     """
-    table_opt_names = get_msg_table_info(URL, "ads_opt_name")
+    table_opt_names = get_msg_table_info(URL, td_class_name)
     table_opt_values = get_msg_table_info(URL, "ads_opt")
     names_values = dict(zip(table_opt_names, table_opt_values))
     return names_values
@@ -254,7 +256,7 @@ def get_msg_table_info(msg_url: str, td_class: str) -> list:
 def extract_ad_value(ad_table: dict, option: str) -> str:
     """TODO"""
     lv_key_name = AD_OPTIONS.get(option)
-    value = ad_table.get(lv_key_name, 'Key not found')
+    value = ad_table.get(lv_key_name, 'N/A')
     if option == "street":
         street_value = value.replace("[Karte]", "")
         print(f"The value for key '{option}' is {street_value}")
@@ -292,24 +294,66 @@ def extract_ad_value(ad_table: dict, option: str) -> str:
     # return value
 
 
-def extract_all_ad_values(URL: str) -> dict:
-    """
-    "street": "Iela:",
-    "room_cnt": "Istabas:",
-    "floor_area": "Platība:",
+def extract_ad_table_values(URL: str) -> dict:
+    """ TODO
     """
     print("DATA for curr URL: ", URL)
-    curr_table = extract_table_names_values(URL)    # returns dict
-    steet_key, street_value = extract_ad_value(curr_table, "street")
-    rc_key, rc_value = extract_ad_value(curr_table, "room_cnt")
-    fa_key, floor_area_value = extract_ad_value(curr_table, "floor_area")
-    apt_loc_key, apt_fl_loc_value = extract_ad_value(curr_table, "apt_floor_loc")
-    house_floor_cnt_key, house_floor_cnt_value = extract_ad_value(curr_table, "house_floor_cnt")
+    ad_opt_table = extract_table_names_values(
+        URL, "ads_opt_name")    # returns dict
+    # Refactor replace with for loop
+    steet_key, street_value = extract_ad_value(ad_opt_table, "street")
+    rc_key, rc_value = extract_ad_value(ad_opt_table, "room_cnt")
+    fa_key, floor_area_value = extract_ad_value(ad_opt_table, "floor_area")
+    apt_loc_key, apt_fl_loc_value = extract_ad_value(
+        ad_opt_table, "apt_floor_loc")
+    house_floor_cnt_key, house_floor_cnt_value = extract_ad_value(
+        ad_opt_table, "house_floor_cnt")
+    house_series_key, house_series_value = extract_ad_value(
+        ad_opt_table, "house_series")
+    house_type_key, house_type_value = extract_ad_value(
+        ad_opt_table, "house_type")
+    apt_feat_list_key, apt_feat_list_value = extract_ad_value(
+        ad_opt_table, "apt_feats")
 
-    house_series_key, house_series_value = extract_ad_value(curr_table, "house_series")
-    house_type_key, house_type_value = extract_ad_value(curr_table, "house_type")
-    apt_feat_list_key, apt_feat_list_value = extract_ad_value(curr_table, "apt_feats")
-    # print(curr_table)
+
+def extract_price_table_values(URL: str, td_class_name: str) -> dict:
+    """ TODO
+    # To extract price and sqm price ads price table must be used )
+    # table_price = get_msg_table_info(nondup_urls[i], "ads_price")
+        "price ": "price",
+    "sqm_price": "sqm_price",
+
+    """
+    price_table = extract_table_names_values(
+        URL, td_class_name)    # returns dict
+    price_key, price_value = extract_ad_value(price_table, "price")
+    sqm_price_key, sqm_price_value = extract_ad_value(price_table, "sqm_price")
+    print("Ad TOTAL Price: ", price_value)
+    print("Ad SQM Price: ", sqm_price_value)
+    # pass
+
+
+def extract_footer_table_values(URL: str, td_class_name: str) -> dict:
+    """ TODO
+    # to extract date and time ads price table must be used )
+    # table_date = get_msg_table_info(nondup_urls[i], "msg_footer")
+    """
+    footer_table = extract_table_names_values(
+        URL, td_class_name)    # returns dict
+    listed_date_key, listed_date_value = extract_ad_value(
+        footer_table, "listed_date")
+    listed_time_key, listed_time_value = extract_ad_value(
+        footer_table, "listed_time")
+    print("Ad Listed Date: ", listed_date_value)
+    print("Ad Listed Time: ", listed_time_value)
+    pass
+
+
+
+
+
+   
+
 
 
 def main():
@@ -324,7 +368,7 @@ def main():
         # for valid_msg_url in valid_msg_urls:
         # debug line only 3 ads
         for idx in range(4):
-            extract_all_ad_values(valid_msg_urls[idx])
+            extract_ad_table_values(valid_msg_urls[idx])
 
 #
     # refactor this function:
