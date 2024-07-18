@@ -133,9 +133,28 @@ def add_datetime_to_filename(filename):
 
 def handler(event, context):  # Original code line
     """lambda main entry point"""
-    page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
-    bs_ogre_object = BeautifulSoup(page.content, "html.parser")
-    valid_msg_urls = find_single_page_urls(bs_ogre_object)
+    # page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
+    # bs_ogre_object = BeautifulSoup(page.content, "html.parser")
+    # valid_msg_urls = find_single_page_urls(bs_ogre_object)
+    
+    # New static way of extracting data from first three pages
+    # TODO: make this dynamic
+    page_one = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
+    page_two = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/page2.html")
+    page_three = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/page3.html")
+    
+    # Error handling behavior by ss.lv
+    # If non existing page requested for example https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/page4.html
+    # it rederacts to first page https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/page.html
+
+    page_one_bs_obj = BeautifulSoup(page_one.content, "html.parser")
+    page_two_bs_obj = BeautifulSoup(page_two.content, "html.parser")
+    page_three_bs_obj = BeautifulSoup(page_three.content, "html.parser")
+    
+    page_one_msg_urls = find_single_page_urls(page_one_bs_obj)
+    page_two_msg_urls = find_single_page_urls(page_two_bs_obj)
+    page_three_msg_urls = find_single_page_urls(page_three_bs_obj)
+    valid_msg_urls = page_one_msg_urls +  page_two_msg_urls + page_three_msg_urls
     
     #Change directory to /tmp folder
     os.chdir('/tmp')    # lambda allows to write only in /tmp
