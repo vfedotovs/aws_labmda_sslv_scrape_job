@@ -59,10 +59,10 @@ def extract_data_from_url(nondup_urls: list) -> None:
         time.sleep(2)
 
 
-# def write_line(text: str, file_name: str) -> None:
-#     """Append text to end of the file"""
-#     with open(file_name, 'a') as the_file:
-#         the_file.write(text)
+def write_line(text: str, file_name: str) -> None:
+    """Append text to end of the file"""
+    with open(file_name, 'a') as the_file:
+        the_file.write(text)
 
 
 def get_msg_table_info(msg_url: str, td_class: str) -> list:
@@ -154,9 +154,15 @@ def handler(event, context):  # Original code line
     page_one_msg_urls = find_single_page_urls(page_one_bs_obj)
     page_two_msg_urls = find_single_page_urls(page_two_bs_obj)
     page_three_msg_urls = find_single_page_urls(page_three_bs_obj)
-    valid_msg_urls = page_one_msg_urls +  page_two_msg_urls + page_three_msg_urls
+    combined_urls = page_one_msg_urls +  page_two_msg_urls + page_three_msg_urls
+    # Since currently there is no dynamic page cound extraction avilable 
+    # curent behavior of ss.lv if you request none existing page it redirects to
+    # first page current quick fix is to remove duplicate entries because of scenario 
+    # if page 3 is missing an you have requested it will gra  urls from first page and 
+    # it will end up with duplicate entries
+    valid_msg_urls = list(set(combined_urls))
     
-    #Change directory to /tmp folder
+    # Change directory to /tmp folder
     os.chdir('/tmp')    # lambda allows to write only in /tmp
     extract_data_from_url(valid_msg_urls)
 
