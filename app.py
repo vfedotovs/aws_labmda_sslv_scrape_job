@@ -43,7 +43,7 @@ def extract_data_from_url(nondup_urls: list) -> None:
             text_line = table_opt_names[idx] + ">" + table_opt_values[idx] + "\n"
             write_line(text_line, dest_file)
 
-        # Extract message price field
+         #Extract message price field
         price_line = "Price:>" + table_price[0] + "\n"
         write_line(price_line, dest_file)
 
@@ -59,10 +59,10 @@ def extract_data_from_url(nondup_urls: list) -> None:
         time.sleep(2)
 
 
-# def write_line(text: str, file_name: str) -> None:
-#     """Append text to end of the file"""
-#     with open(file_name, 'a') as the_file:
-#         the_file.write(text)
+def write_line(text: str, file_name: str) -> None:
+    """Append text to end of the file"""
+    with open(file_name, 'a') as the_file:
+        the_file.write(text)
 
 
 def get_msg_table_info(msg_url: str, td_class: str) -> list:
@@ -80,7 +80,8 @@ def get_msg_table_info(msg_url: str, td_class: str) -> list:
         tostr = str(data)
         no_front = tostr.split('">', 1)[1]
         name = no_front.split("</", 1)[0]
-        table_fields.append(name)
+        clean_name = name.replace('\t', '').replace('\r', '').replace('\n', '')
+        table_fields.append(clean_name)
     return table_fields
 
 
@@ -133,9 +134,25 @@ def add_datetime_to_filename(filename):
 
 def handler(event, context):  # Original code line
     """lambda main entry point"""
-    page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
-    bs_ogre_object = BeautifulSoup(page.content, "html.parser")
-    valid_msg_urls = find_single_page_urls(bs_ogre_object)
+    page_one = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
+    page_two = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/page2.html")
+    page_three = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/page3.html")
+                    
+    # Error handling behavior by ss.lv
+    # each page contains max 30 ads per page 3 pages shouls cover 90 ads - I have not seen 90 ads for ogre city
+    # If non existing page requested for example https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/page4.html
+    # it rederacts to first page https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/page.html
+    page_one_bs_obj = BeautifulSoup(page_one.content, "html.parser")
+    page_two_bs_obj = BeautifulSoup(page_two.content, "html.parser")
+    page_three_bs_obj = BeautifulSoup(page_three.content, "html.parser")
+    
+    page_one_msg_urls = find_single_page_urls(page_one_bs_obj)
+    page_two_msg_urls = find_single_page_urls(page_two_bs_obj)
+    page_three_msg_urls = find_single_page_urls(page_three_bs_obj)
+    three_page_urls = page_one_msg_urls +  page_two_msg_urls + page_three_msg_urls
+    # remove duplicates 
+    valid_msg_urls = list(set(three_page_urls))
+    
     
     #Change directory to /tmp folder
     os.chdir('/tmp')    # lambda allows to write only in /tmp
