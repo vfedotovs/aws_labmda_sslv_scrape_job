@@ -1,4 +1,5 @@
-FROM amazon/aws-lambda-python:3.9
+# Use explicit platform specification for better compatibility
+FROM --platform=linux/amd64 amazon/aws-lambda-python:3.9
 
 # copy requirements.txt to container
 COPY requirements.txt ./
