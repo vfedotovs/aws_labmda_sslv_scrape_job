@@ -8,6 +8,7 @@
 - AWS CLI v2
 - Git
 - Make (for using Makefile)
+- UV (Python package manager)
 
 ### Local Development Setup
 ```bash
@@ -15,16 +16,106 @@
 git clone <your-repo-url>
 cd aws_labmda_sslv_scrape_job
 
-# Install Python dependencies
-pip install -r requirements.txt
+# Install UV if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies with UV
+uv sync
 
 # Configure AWS CLI
 aws configure
 ```
 
-### Development Workflow
+### UV Package Management
 
-#### 1. Code Changes
+#### Installing Dependencies
+```bash
+# Install all dependencies from pyproject.toml
+uv sync
+
+# Add new dependency
+uv add requests
+
+# Add development dependency
+uv add --dev pytest
+
+# Remove dependency
+uv remove package-name
+```
+
+#### Virtual Environment
+```bash
+# Create virtual environment
+uv venv
+
+# Activate virtual environment
+source .venv/bin/activate  # Linux/macOS
+# or
+.venv\Scripts\activate     # Windows
+
+# Run commands in virtual environment
+uv run python app.py
+```
+
+## Git and Version Control
+
+### Files to Commit vs Ignore
+
+#### ✅ **Files to COMMIT:**
+- `pyproject.toml` - Project configuration and dependencies
+- `uv.lock` - Lock file for reproducible builds (for applications)
+- `.python-version` - Python version specification
+- `app.py` - Main application code
+- `Dockerfile` - Container configuration
+- `Makefile` - Build automation
+- `README.md` - Project documentation
+- `docs/` - Documentation files
+- `.github/` - GitHub templates and workflows
+
+#### ❌ **Files to IGNORE (in .gitignore):**
+- `__pycache__/` - Python bytecode cache
+- `.venv/` - Virtual environment directory
+- `.uv_cache/` - UV package cache
+- `*.pyc` - Compiled Python files
+- `.env` - Environment variables
+- `*.log` - Log files
+- `*-raw-data-report*.txt` - Generated scraped data files
+- `.DS_Store` - macOS system files
+- `.vscode/` - VS Code settings (except extensions.json)
+- `.idea/` - PyCharm/IntelliJ settings
+
+### UV-Specific Best Practices
+
+#### Lock File Management
+```bash
+# For applications (like this project): COMMIT uv.lock
+# This ensures reproducible builds across environments
+git add uv.lock
+
+# For libraries: IGNORE uv.lock
+# Libraries should be flexible with dependency versions
+```
+
+#### Python Version Management
+```bash
+# Commit .python-version to ensure consistent Python versions
+echo "3.11" > .python-version
+git add .python-version
+```
+
+#### Dependency Management
+```bash
+# Always update pyproject.toml for new dependencies
+uv add requests
+
+# Commit both pyproject.toml and uv.lock
+git add pyproject.toml uv.lock
+git commit -m "feat: add requests dependency"
+```
+
+## Development Workflow
+
+### 1. Code Changes
 ```bash
 # Make changes to app.py or other files
 # Test locally using Makefile
@@ -32,7 +123,7 @@ make build-local CITY=ogre
 make test CITY=ogre
 ```
 
-#### 2. Testing
+### 2. Testing
 ```bash
 # Run local tests
 make test CITY=ogre
@@ -44,7 +135,7 @@ make logs CITY=ogre
 make test-stop CITY=ogre
 ```
 
-#### 3. Deployment
+### 3. Deployment
 ```bash
 # Deploy to development environment
 make deploy CITY=ogre
@@ -59,9 +150,14 @@ make deploy CITY=ogre
 ```
 aws_labmda_sslv_scrape_job/
 ├── app.py                 # Main Lambda function
+├── main.py               # Alternative entry point (if needed)
 ├── Dockerfile            # Container configuration
 ├── Makefile              # Build and deployment automation
-├── requirements.txt      # Python dependencies
+├── pyproject.toml        # Project configuration and dependencies
+├── uv.lock              # Dependency lock file
+├── requirements.txt      # Legacy requirements (can be removed)
+├── .python-version      # Python version specification
+├── .gitignore           # Git ignore rules
 ├── README.md            # Project overview
 ├── docs/                # Documentation
 │   ├── getting-started.md
@@ -69,7 +165,9 @@ aws_labmda_sslv_scrape_job/
 │   ├── api.md
 │   ├── troubleshooting.md
 │   └── development.md
-└── examples/            # Example configurations
+└── .github/             # GitHub templates
+    ├── ISSUE_TEMPLATE.md
+    └── PULL_REQUEST_TEMPLATE.md
 ```
 
 ### Key Functions in app.py
