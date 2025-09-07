@@ -12,6 +12,10 @@ from bs4 import BeautifulSoup
 
 SCRAPED_DATA = {"for_sale_apartments": []}
 
+# Application metadata constants
+LAMBDA_SCRAPER_VERSION = "2.0.1"
+CITY_ID = "5001"
+
 AD_OPTIONS = {
     "street": "Iela:",  # implemented
     "room_cnt": "Istabas:",  # implemented
@@ -305,31 +309,33 @@ def main():
             scraped_data["apartments"].append(curr_apt_data)
     print(scraped_data)
 
-    #
-    # refactor this function:
-    # continue work here after 2024-06-23
-    # advert_data = extract_data_from_url(valid_msg_urls)
-    # ads_data_json = json.dumps(advert_data, indent=4)
+    # Prepare job metadata and final JSON structure
+    utc_now = datetime.utcnow()
+    job_id = f"daily_apartment_scrape_{utc_now.strftime('%Y%m%d')}"
+    timestamp_utc = utc_now.replace(microsecond=0).isoformat() + "Z"
+    total_apartments = len(scraped_data.get("apartments", []))
 
-    lambda_out_v2 = json.dumps(scraped_data, indent=4)
+    final_output = {
+        "job_metadata": {
+            "job_id": job_id,
+            "city_id": CITY_ID,
+            "timestamp_utc": timestamp_utc,
+            "lambda_scraper_version": LAMBDA_SCRAPER_VERSION,
+            "total_apartments_scraped": total_apartments,
+        },
+        "apartments": scraped_data.get("apartments", []),
+    }
 
-    #
+    # Create timestamped filename and write JSON output
     full_time = str(datetime.now())
     date_str = full_time.split(" ")[0]
     time_str = full_time.split(" ")[1].split(".")[0]
     new_ts = time_str.replace(":", "_")
     uniq_ts = date_str + "T" + new_ts
 
-    #    bucket_name = "my-s3-bucket-name"
-    # output_file_name = f"city_id_5001_apt_sale_data_{uniq_ts}.json"
-    output_file_name_v2 = f"city_id_5001_apt_sale_data_v2_{uniq_ts}.json"
-    # json_object = json.dumps(ads_data_json)
-    json_object_v2 = json.dumps(lambda_out_v2)
-    # Writing to sample.json
-    # with open(output_file_name, "w") as outfile:
-    #     outfile.write(json_object)
+    output_file_name_v2 = f"city_id_{CITY_ID}_apt_sale_data_v2_{uniq_ts}.json"
     with open(output_file_name_v2, "w", encoding="utf8") as outfile_v2:
-        outfile_v2.write(json_object_v2)
+        json.dump(final_output, outfile_v2, ensure_ascii=False, indent=4)
 
 
 #    s3.Bucket(bucket_name).put_object(Key=output_file_name, Body=json_body)
