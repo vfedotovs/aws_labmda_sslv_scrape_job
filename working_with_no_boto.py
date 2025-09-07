@@ -4,6 +4,7 @@ import json
 import re
 from datetime import datetime
 import time
+
 # import boto3
 import requests
 from bs4 import BeautifulSoup
@@ -12,20 +13,19 @@ from bs4 import BeautifulSoup
 SCRAPED_DATA = {"for_sale_apartments": []}
 
 AD_OPTIONS = {
-    "street": "Iela:",            # implemented
-    "room_cnt": "Istabas:",       # implemented
-    "floor_area": "Platība:",     # implemented
-    "apt_floor_loc": "Stāvs:",    # implemented
+    "street": "Iela:",  # implemented
+    "room_cnt": "Istabas:",  # implemented
+    "floor_area": "Platība:",  # implemented
+    "apt_floor_loc": "Stāvs:",  # implemented
     "house_floor_cnt": "Stāvs:",  # implemented
-
     "house_series": "Sērija:",
-    "house_type":  'Mājas tips:',
-    "apt_feats": 'Ērtības:',
+    "house_type": "Mājas tips:",
+    "apt_feats": "Ērtības:",
     "price ": "price",
     "sqm_price": "sqm_price",
     "listed_date": "listed_date",
     "listed_time": "listed_time",
-    "view_cnt": "view_count"
+    "view_cnt": "view_count",
 }
 
 
@@ -34,8 +34,8 @@ def find_single_page_urls(bs_object) -> list:
     object: bs4 object
     returns: list of strings with all message URLs"""
     urls = []
-    for hyperlink in bs_object.find_all('a', href=True):
-        one_link = "https://ss.lv" + hyperlink['href']
+    for hyperlink in bs_object.find_all("a", href=True):
+        one_link = "https://ss.lv" + hyperlink["href"]
         re_match = re.search("msg", one_link)
         if re_match:
             urls.append(one_link)
@@ -56,7 +56,7 @@ def extract_data_from_url(nondup_urls: list) -> dict:
     curr_ad_attributes = []
     ad_dict = []
     # print(f"Extracted {len(nondup_urls)} URL links with apartment ads for sale in ogre city")
-#    for i in range(msg_url_count): # original iterates over all ad URLs
+    #    for i in range(msg_url_count): # original iterates over all ad URLs
     for i in range(3):
         current_msg_url = nondup_urls[i] + "\n"
         print(current_msg_url)
@@ -94,16 +94,16 @@ def extract_data_from_url(nondup_urls: list) -> dict:
 
 
 def get_msg_table_info(msg_url: str, td_class: str) -> list:
-    """ Function parses message page and extracts td_class table fields
+    """Function parses message page and extracts td_class table fields
     Paramters:
     msg_url: message web page link
     td_class: table field name
     returns: str list with table field data"""
     page = requests.get(msg_url)
     soup = BeautifulSoup(page.content, "html.parser")
-    table = soup.find('table', id="page_main")
+    table = soup.find("table", id="page_main")
     table_fields = []
-    table_data = table.findAll('td', {"class": td_class})
+    table_data = table.findAll("td", {"class": td_class})
     for data in table_data:
         tostr = str(data)
         no_front = tostr.split('">', 1)[1]
@@ -123,7 +123,7 @@ def get_msg_field_info(msg_url: str, span_id: str):
 
 
 def extract_url_hash(full_url: str) -> str:
-    """ Extracts hash: dlonf from example url below:
+    """Extracts hash: dlonf from example url below:
     https://ss.lv/msg/lv/real-estate/flats/ogre-and-reg/ogre/dlonf.html\n'"""
     url_hash = full_url.split("/")[9].split(".")[0]
     return url_hash
@@ -164,12 +164,12 @@ def get_msg_table_info(msg_url: str, td_class: str) -> list:
         print(f"Request failed: {e}")
         return []
     soup = BeautifulSoup(page.content, "html.parser")
-    table = soup.find('table', id="page_main")
+    table = soup.find("table", id="page_main")
     if not table:
         print("Table with id 'page_main' not found.")
         return []
     table_fields = []
-    table_data = table.find_all('td', class_=td_class)
+    table_data = table.find_all("td", class_=td_class)
     for data in table_data:
         name = data.get_text(strip=True)
         table_fields.append(name)
@@ -179,7 +179,7 @@ def get_msg_table_info(msg_url: str, td_class: str) -> list:
 def extract_ad_value(ad_table: dict, option: str) -> str:
     """TODO"""
     lv_key_name = AD_OPTIONS.get(option)
-    value = ad_table.get(lv_key_name, 'N/A')
+    value = ad_table.get(lv_key_name, "N/A")
     if option == "street":
         street_value = value.replace("[Karte]", "")
         print(f"The value for key '{option}' is {street_value}")
@@ -220,51 +220,45 @@ def extract_ad_value(ad_table: dict, option: str) -> str:
 
 
 def extract_ad_table_values(URL: str, apt_data: dict) -> dict:
-    """ TODO
-    """
+    """TODO"""
     print("DATA for curr URL: ", URL)
-    ad_opt_table = extract_table_names_values(
-        URL, "ads_opt_name")    # returns dict
+    ad_opt_table = extract_table_names_values(URL, "ads_opt_name")  # returns dict
     # Refactor replace with for loop
     ad_url_hash = extract_url_hash(URL)
-    apt_data['url_hash'] = ad_url_hash
+    apt_data["url_hash"] = ad_url_hash
     street_key, street_value = extract_ad_value(ad_opt_table, "street")
     apt_data[street_key] = street_value
     rc_key, rc_value = extract_ad_value(ad_opt_table, "room_cnt")
     apt_data[rc_key] = rc_value
     fa_key, floor_area_value = extract_ad_value(ad_opt_table, "floor_area")
     apt_data[fa_key] = floor_area_value
-    apt_loc_key, apt_fl_loc_value = extract_ad_value(
-        ad_opt_table, "apt_floor_loc")
+    apt_loc_key, apt_fl_loc_value = extract_ad_value(ad_opt_table, "apt_floor_loc")
     apt_data[apt_loc_key] = apt_fl_loc_value
 
     house_floor_cnt_key, house_floor_cnt_value = extract_ad_value(
-        ad_opt_table, "house_floor_cnt")
+        ad_opt_table, "house_floor_cnt"
+    )
     apt_data[house_floor_cnt_key] = house_floor_cnt_value
     house_series_key, house_series_value = extract_ad_value(
-        ad_opt_table, "house_series")
+        ad_opt_table, "house_series"
+    )
     apt_data[house_series_key] = house_series_value
-    house_type_key, house_type_value = extract_ad_value(
-        ad_opt_table, "house_type")
+    house_type_key, house_type_value = extract_ad_value(ad_opt_table, "house_type")
     apt_data[house_type_key] = house_type_value
-    apt_feat_list_key, apt_feat_list_value = extract_ad_value(
-        ad_opt_table, "apt_feats")
+    apt_feat_list_key, apt_feat_list_value = extract_ad_value(ad_opt_table, "apt_feats")
     apt_data[apt_feat_list_key] = apt_feat_list_value
     print(apt_data)
     return apt_data
 
 
 def extract_footer_table_values(URL: str, td_class_name: str) -> dict:
-    """ TODO
+    """TODO
     # to extract date and time ads price table must be used )
     # table_date = get_msg_table_info(nondup_urls[i], "msg_footer")
     """
-    footer_table = extract_table_names_values(
-        URL, td_class_name)    # returns dict
-    listed_date_key, listed_date_value = extract_ad_value(
-        footer_table, "listed_date")
-    listed_time_key, listed_time_value = extract_ad_value(
-        footer_table, "listed_time")
+    footer_table = extract_table_names_values(URL, td_class_name)  # returns dict
+    listed_date_key, listed_date_value = extract_ad_value(footer_table, "listed_date")
+    listed_time_key, listed_time_value = extract_ad_value(footer_table, "listed_time")
     print("Ad Listed Date: ", listed_date_value)
     print("Ad Listed Time: ", listed_time_value)
     pass
@@ -272,21 +266,26 @@ def extract_footer_table_values(URL: str, td_class_name: str) -> dict:
 
 def main():
     """main entry point for debugging"""
-#    s3 = boto3.resource('s3')
-    page = requests.get("https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/")
+    #    s3 = boto3.resource('s3')
+    page = requests.get(
+        "https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/"
+    )
     bs_ogre_object = BeautifulSoup(page.content, "html.parser")
     valid_msg_urls = find_single_page_urls(bs_ogre_object)
     print("Todays Ogre city apartment ad for sale count is : ", len(valid_msg_urls))
     scraped_data = {"apartments": []}
 
     if len(valid_msg_urls) > 0:
-        for idx in range(3):
+        for idx in range(10):
             curr_apt_elements = {}
-            curr_apt_data = extract_ad_table_values(valid_msg_urls[idx], curr_apt_elements)
-            price_and_sqm_price = get_msg_table_info(
-                valid_msg_urls[idx], "ads_price")[0]
-            apt_price = price_and_sqm_price.split('€')[0]
-            sqm_price = price_and_sqm_price.split('€')[1]
+            curr_apt_data = extract_ad_table_values(
+                valid_msg_urls[idx], curr_apt_elements
+            )
+            price_and_sqm_price = get_msg_table_info(valid_msg_urls[idx], "ads_price")[
+                0
+            ]
+            apt_price = price_and_sqm_price.split("€")[0]
+            sqm_price = price_and_sqm_price.split("€")[1]
             clean_sqm_price = sqm_price.split("(")[1]
             curr_apt_data["price"] = apt_price
             curr_apt_data["sqm_price"] = clean_sqm_price
@@ -306,24 +305,22 @@ def main():
             scraped_data["apartments"].append(curr_apt_data)
     print(scraped_data)
 
-
-#
+    #
     # refactor this function:
     # continue work here after 2024-06-23
     # advert_data = extract_data_from_url(valid_msg_urls)
     # ads_data_json = json.dumps(advert_data, indent=4)
-    
 
     lambda_out_v2 = json.dumps(scraped_data, indent=4)
 
-#
+    #
     full_time = str(datetime.now())
     date_str = full_time.split(" ")[0]
     time_str = full_time.split(" ")[1].split(".")[0]
     new_ts = time_str.replace(":", "_")
     uniq_ts = date_str + "T" + new_ts
 
-#    bucket_name = "my-s3-bucket-name"
+    #    bucket_name = "my-s3-bucket-name"
     # output_file_name = f"city_id_5001_apt_sale_data_{uniq_ts}.json"
     output_file_name_v2 = f"city_id_5001_apt_sale_data_v2_{uniq_ts}.json"
     # json_object = json.dumps(ads_data_json)
@@ -331,12 +328,13 @@ def main():
     # Writing to sample.json
     # with open(output_file_name, "w") as outfile:
     #     outfile.write(json_object)
-    with open(output_file_name_v2, "w",encoding='utf8') as outfile_v2:
+    with open(output_file_name_v2, "w", encoding="utf8") as outfile_v2:
         outfile_v2.write(json_object_v2)
-#    s3.Bucket(bucket_name).put_object(Key=output_file_name, Body=json_body)
-    # with open(output_file_name_v2, 'w', encoding='utf-8') as f:
-    #     json.dump(lambda_out_v2, f, ensure_ascii=False, indent=4)
 
+
+#    s3.Bucket(bucket_name).put_object(Key=output_file_name, Body=json_body)
+# with open(output_file_name_v2, 'w', encoding='utf-8') as f:
+#     json.dump(lambda_out_v2, f, ensure_ascii=False, indent=4)
 
 
 main()
