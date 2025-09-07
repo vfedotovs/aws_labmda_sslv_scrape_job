@@ -4,6 +4,7 @@ import json
 import re
 from datetime import datetime
 import time
+import os
 
 # import boto3
 import requests
@@ -15,6 +16,27 @@ SCRAPED_DATA = {"for_sale_apartments": []}
 # Application metadata constants
 LAMBDA_SCRAPER_VERSION = "2.0.1"
 CITY_ID = "5001"
+
+# Runtime/env configuration (override via environment variables when available)
+LAMBDA_FUNCTION_NAME = os.getenv("AWS_LAMBDA_FUNCTION_NAME", "sslv-scraper-ogre")
+CONTAINER_IMAGE_URI = os.getenv(
+    "CONTAINER_IMAGE",
+    "123456789012.dkr.ecr.us-east-1.amazonaws.com/sslv-scraper-ogre:2.0.1",
+)
+GIT_COMMIT = os.getenv("GIT_COMMIT", "unknown")
+LAMBDA_MEMORY_MB = int(os.getenv("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "512"))
+
+# Basic HTTP status tracking
+HTTP_STATUS_COUNTS = {}
+
+
+def _inc_status_count(status_code: int) -> None:
+    try:
+        code_str = str(status_code)
+    except Exception:
+        code_str = "unknown"
+    HTTP_STATUS_COUNTS[code_str] = HTTP_STATUS_COUNTS.get(code_str, 0) + 1
+
 
 AD_OPTIONS = {
     "street": "Iela:",  # implemented
@@ -271,16 +293,25 @@ def extract_footer_table_values(URL: str, td_class_name: str) -> dict:
 def main():
     """main entry point for debugging"""
     #    s3 = boto3.resource('s3')
-    page = requests.get(
-        "https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/"
-    )
+    start_dt = datetime.utcnow()
+    start_time_utc = start_dt.replace(microsecond=0).isoformat() + "Z"
+
+    source_urls = [
+        "https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/",
+        "https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/page2.html",
+        "https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/page3.html",
+    ]
+
+    page = requests.get(source_urls[0])
+    _inc_status_count(page.status_code)
     bs_ogre_object = BeautifulSoup(page.content, "html.parser")
     valid_msg_urls = find_single_page_urls(bs_ogre_object)
     print("Todays Ogre city apartment ad for sale count is : ", len(valid_msg_urls))
     scraped_data = {"apartments": []}
 
+    ads_seen = len(valid_msg_urls)
     if len(valid_msg_urls) > 0:
-        for idx in range(10):
+        for idx in range(ads_seen):
             curr_apt_elements = {}
             curr_apt_data = extract_ad_table_values(
                 valid_msg_urls[idx], curr_apt_elements
@@ -309,6 +340,11 @@ def main():
             scraped_data["apartments"].append(curr_apt_data)
     print(scraped_data)
 
+    end_dt = datetime.utcnow()
+    end_time_utc = end_dt.replace(microsecond=0).isoformat() + "Z"
+    scraper_runtime_ms = int((end_dt - start_dt).total_seconds() * 1000)
+    ads_parsed = len(scraped_data.get("apartments", []))
+
     # Prepare job metadata and final JSON structure
     utc_now = datetime.utcnow()
     job_id = f"daily_apartment_scrape_{utc_now.strftime('%Y%m%d')}"
@@ -322,6 +358,18 @@ def main():
             "timestamp_utc": timestamp_utc,
             "lambda_scraper_version": LAMBDA_SCRAPER_VERSION,
             "total_apartments_scraped": total_apartments,
+            "start_time_utc": start_time_utc,
+            "end_time_utc": end_time_utc,
+            "scraper_runtime_ms": scraper_runtime_ms,
+            "lambda_function_name": LAMBDA_FUNCTION_NAME,
+            "container_image": CONTAINER_IMAGE_URI,
+            "git_commit": GIT_COMMIT,
+            "lambda_memory_mb": LAMBDA_MEMORY_MB,
+            "source_urls": source_urls,
+            "pages_scraped": 3,
+            "ads_seen": ads_seen,
+            "ads_parsed": ads_parsed,
+            "http_status_counts": HTTP_STATUS_COUNTS,
         },
         "apartments": scraped_data.get("apartments", []),
     }
