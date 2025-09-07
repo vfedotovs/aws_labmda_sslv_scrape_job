@@ -1,6 +1,9 @@
 
 
-ws-lambda-v3.x
+
+ws-lambda-v2.x is running to bucket city-id-5001-lambda-apts-sale-storage
+
+ws-lambda-v3.x -code in branch - create_json_lambda_dev
 
 milestone 1. locally scrapes - and generates json formatted output with metadata - completed in working_with_no_boto.py
 milestone 2. to pass test locally - code only uv run -m app - scrapes and uplads json to S3 bucket
