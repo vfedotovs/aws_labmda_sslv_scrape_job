@@ -1,4 +1,6 @@
-FROM amazon/aws-lambda-python:3.11-arm64
+# FROM amazon/aws-lambda-python:3.11-arm64
+FROM amazon/aws-lambda-python:3.11-x86_64
+
 
 # copy requirements.txt to container
 COPY requirements.txt ./
