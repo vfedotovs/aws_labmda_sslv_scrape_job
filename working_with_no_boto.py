@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 import time
 import os
+import random
 
 # import boto3
 import requests
@@ -338,6 +339,9 @@ def main():
                     curr_apt_data["listed_date"] = clean_date
                     curr_apt_data["listed_time"] = clean_time
             scraped_data["apartments"].append(curr_apt_data)
+            # Randomized delay (2–6 seconds) to mimic human-like behavior
+            sleep_seconds = random.uniform(2, 6)
+            time.sleep(sleep_seconds)
     print(scraped_data)
 
     end_dt = datetime.utcnow()
