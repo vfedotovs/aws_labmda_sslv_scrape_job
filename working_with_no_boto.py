@@ -11,6 +11,9 @@ import random
 import requests
 from bs4 import BeautifulSoup
 
+# The maximum execution time limit for an AWS Lambda function is:
+# 900 seconds (15 minutes).
+# So the longest a Lambda can run before being forcibly stopped is 900 seconds.
 
 SCRAPED_DATA = {"for_sale_apartments": []}
 
@@ -303,10 +306,27 @@ def main():
         "https://www.ss.lv/lv/real-estate/flats/ogre-and-reg/ogre/sell/page3.html",
     ]
 
-    page = requests.get(source_urls[0])
-    _inc_status_count(page.status_code)
-    bs_ogre_object = BeautifulSoup(page.content, "html.parser")
-    valid_msg_urls = find_single_page_urls(bs_ogre_object)
+    # Fetch and parse all listing pages, aggregate unique ad URLs
+    aggregated_urls = []
+    pages_scraped = 0
+    for url in source_urls:
+        try:
+            resp = requests.get(url)
+            _inc_status_count(resp.status_code)
+            soup = BeautifulSoup(resp.content, "html.parser")
+            page_urls = find_single_page_urls(soup)
+            aggregated_urls.extend(page_urls)
+            pages_scraped += 1
+        except Exception as e:
+            print(f"Failed to fetch or parse {url}: {e}")
+
+    # Deduplicate while preserving order
+    seen = set()
+    valid_msg_urls = []
+    for u in aggregated_urls:
+        if u not in seen:
+            seen.add(u)
+            valid_msg_urls.append(u)
     print("Todays Ogre city apartment ad for sale count is : ", len(valid_msg_urls))
     scraped_data = {"apartments": []}
 
@@ -370,7 +390,7 @@ def main():
             "git_commit": GIT_COMMIT,
             "lambda_memory_mb": LAMBDA_MEMORY_MB,
             "source_urls": source_urls,
-            "pages_scraped": 3,
+            "pages_scraped": pages_scraped,
             "ads_seen": ads_seen,
             "ads_parsed": ads_parsed,
             "http_status_counts": HTTP_STATUS_COUNTS,
